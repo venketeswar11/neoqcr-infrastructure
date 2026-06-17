@@ -1,0 +1,77 @@
+name: 'Terraform Enterprise Workflow'
+
+on:
+  pull_request:
+    branches: [ "main" ]
+  push:
+    branches: [ "main" ]
+
+# Minimum permissions required for GitHub Actions to read the repo
+permissions:
+  id-token: write 
+  contents: read
+
+env:
+  # Azure authentication variables. Terraform automatically looks for these.
+  # The actual values are hidden in GitHub Secrets.
+  ARM_CLIENT_ID: ${{ secrets.AZURE_CLIENT_ID }}
+  ARM_CLIENT_SECRET: ${{ secrets.AZURE_CLIENT_SECRET }}
+  ARM_SUBSCRIPTION_ID: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+  ARM_TENANT_ID: ${{ secrets.AZURE_TENANT_ID }}
+  
+  # Pointing to the specific environment directory
+  TF_WORKING_DIR: 'environments/dev' 
+
+jobs:
+  terraform-ci-plan:
+    name: 'TF CI: Format, Validate, Plan'
+    runs-on: ubuntu-latest
+    # This job ONLY runs when someone opens a Pull Request
+    if: github.event_name == 'pull_request'
+    defaults:
+      run:
+        working-directory: ${{ env.TF_WORKING_DIR }}
+    steps:
+    - name: Checkout Code
+      uses: actions/checkout@v3
+    
+    - name: Setup Terraform
+      uses: hashicorp/setup-terraform@v2
+
+    - name: Terraform Format Check
+      # Fails the PR if the code isn't formatted properly
+      run: terraform fmt -check -recursive ../../
+
+    - name: Terraform Init
+      run: terraform init
+
+    - name: Terraform Validate
+      # Checks for syntax errors before planning
+      run: terraform validate
+
+    - name: Terraform Plan
+      # Shows exactly what will be created/changed/destroyed
+      run: terraform plan -out=tfplan
+
+  terraform-cd-apply:
+    name: 'TF CD: Apply'
+    runs-on: ubuntu-latest
+    # This job ONLY runs when code is officially merged into the main branch
+    if: github.event_name == 'push'
+    environment: development
+    defaults:
+      run:
+        working-directory: ${{ env.TF_WORKING_DIR }}
+    steps:
+    - name: Checkout Code
+      uses: actions/checkout@v3
+
+    - name: Setup Terraform
+      uses: hashicorp/setup-terraform@v2
+
+    - name: Terraform Init
+      run: terraform init
+
+    - name: Terraform Apply
+      # Auto-approve is used because the plan was already reviewed in the PR
+      run: terraform apply -auto-approve
