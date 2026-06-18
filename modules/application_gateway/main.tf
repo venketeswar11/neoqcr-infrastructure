@@ -22,7 +22,7 @@ resource "azurerm_web_application_firewall_policy" "waf" {
   custom_rules {
     name      = "RestrictToTrustedIPs"
     priority  = 10
-    rule_type = "Match"
+    rule_type = "MatchRule"
     action    = "Block"
 
     match_conditions {
@@ -63,8 +63,8 @@ resource "azurerm_application_gateway" "appgw" {
   }
 
   frontend_port {
-    name = "https-port"
-    port = 443
+    name = "http-port"
+    port = 80
   }
 
   frontend_ip_configuration {
@@ -104,20 +104,16 @@ resource "azurerm_application_gateway" "appgw" {
   }
 
   http_listener {
-    name                           = "private-https-listener"
+    name                           = "private-http-listener"
     frontend_ip_configuration_name = "private-frontend"
-    frontend_port_name             = "https-port"
-    protocol                       = "Https"
-    # In enterprise TF, SSL certs are usually pulled from Azure Key Vault data sources. 
-    # Placeholder for Key Vault Secret ID:
-    # ssl_certificate_name = "qcrpredict-cert" 
-    # key_vault_secret_id  = data.azurerm_key_vault_secret.cert.id
+    frontend_port_name             = "http-port"
+    protocol                       = "Http"
   }
 
   request_routing_rule {
     name                       = "route-to-api"
     rule_type                  = "Basic"
-    http_listener_name         = "private-https-listener"
+    http_listener_name         = "private-http-listener"
     backend_address_pool_name  = "Backend-REST-Pool"
     backend_http_settings_name = "Test-settings"
     priority                   = 100
