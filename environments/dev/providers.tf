@@ -7,13 +7,13 @@ terraform {
   }
 
   backend "azurerm" {
-    resource_group_name  = "tfstate-rg"
-    
+    resource_group_name = "Sentinel-Inference-server"
+
     # PUT YOUR AZURE STORAGE ACCOUNT NAME HERE
-    storage_account_name = "neoqcrtfstate12345" 
-    
-    container_name       = "tfstate"
-    key                  = "dev.terraform.tfstate"
+    storage_account_name = "sentinelv1"
+
+    container_name = "tfstate"
+    key            = "dev.terraform.tfstate"
   }
 }
 
