@@ -91,6 +91,8 @@ resource "azurerm_application_gateway" "appgw" {
     protocol              = "Http"
     request_timeout       = 30
     probe_name            = "api-health-probe"
+
+    pick_host_name_from_backend_address = true
   }
 
   probe {
